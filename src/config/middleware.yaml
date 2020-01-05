@@ -1,0 +1,19 @@
+services:
+    _instanceof:
+        Psr\Http\Server\MiddlewareInterface:
+            tags: ['app.middleware']
+
+    Lium\Framework\Middleware\:
+        resource: '../Middleware/*'
+
+    Lium\Framework\Middleware\ActionHandler:
+        arguments:
+            $actionLocator: !tagged_locator 'app.action'
+
+    Lium\Framework\Middleware\ExceptionHandler:
+        arguments:
+            $responseFactory: '@Psr\Http\Message\ResponseFactoryInterface'
+
+    Lium\Framework\Middleware\Router:
+        arguments:
+            $matcher: '@Symfony\Component\Routing\Matcher\UrlMatcherInterface'

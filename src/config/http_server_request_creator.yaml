@@ -1,0 +1,14 @@
+# Used in the kernel to generate the request
+
+services:
+    Nyholm\Psr7Server\ServerRequestCreatorInterface:
+        alias: 'server_request_creator'
+        public: true
+
+    server_request_creator:
+        class: Nyholm\Psr7Server\ServerRequestCreator
+        arguments:
+            - '@Psr\Http\Message\RequestFactoryInterface'
+            - '@Psr\Http\Message\ResponseFactoryInterface'
+            - '@Psr\Http\Message\ServerRequestFactoryInterface'
+            - '@Psr\Http\Message\StreamFactoryInterface'

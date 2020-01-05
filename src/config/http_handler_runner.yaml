@@ -1,0 +1,9 @@
+# Used in the kernel to emit the response
+
+services:
+    Laminas\HttpHandlerRunner\Emitter\EmitterInterface:
+        alias: 'emitter.sapi_emitter'
+        public: true
+
+    emitter.sapi_emitter:
+        class: Laminas\HttpHandlerRunner\Emitter\SapiEmitter
