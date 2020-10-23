@@ -19,8 +19,7 @@ use Symfony\Contracts\Service\ServiceProviderInterface;
  */
 final class ActionHandler implements MiddlewareInterface
 {
-    /** @var ServiceProviderInterface */
-    private $actionLocator;
+    private ServiceProviderInterface $actionLocator;
 
     public function __construct(ServiceProviderInterface $actionLocator)
     {
@@ -40,7 +39,7 @@ final class ActionHandler implements MiddlewareInterface
         /** @var string|null $route */
         $route = $request->getAttribute('route');
 
-        if (null === $actionClassName) {
+        if ($actionClassName === null) {
             throw new ActionNotFoundException(
                 null,
                 $route,

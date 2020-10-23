@@ -17,8 +17,7 @@ use Psr\Http\Server\RequestHandlerInterface;
  */
 final class ExceptionHandler implements MiddlewareInterface
 {
-    /** @var ResponseFactoryInterface */
-    private $responseFactory;
+    private ResponseFactoryInterface$responseFactory;
 
     public function __construct(ResponseFactoryInterface $responseFactory)
     {
