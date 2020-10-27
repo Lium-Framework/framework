@@ -10,7 +10,7 @@
         }
     ],
     "require": {
-        "php": "^7.2.5",
+        "php": "^7.4",
         "laminas/laminas-httphandlerrunner": "^1.1",
         "nyholm/psr7-server": "^0.4",
         "psr/http-factory": "^1.0",

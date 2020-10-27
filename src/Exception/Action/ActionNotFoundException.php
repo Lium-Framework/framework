@@ -4,19 +4,17 @@ declare(strict_types=1);
 
 namespace Lium\Framework\Exception\Action;
 
+use InvalidArgumentException;
 use Lium\Framework\Exception\ExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 
-class ActionNotFoundException extends \InvalidArgumentException implements ExceptionInterface, NotFoundExceptionInterface
+class ActionNotFoundException extends InvalidArgumentException implements ExceptionInterface, NotFoundExceptionInterface
 {
-    /** @var string|null */
-    private $action;
-
-    /** @var string|null */
-    private $route;
+    private ?string $action;
+    private ?string $route;
 
     /** @var string[] */
-    private $availableActions;
+    private array $availableActions;
 
     public function __construct(?string $action, ?string $route, array $availableActions = [])
     {

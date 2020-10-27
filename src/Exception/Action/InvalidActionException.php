@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace Lium\Framework\Exception\Action;
 
+use InvalidArgumentException;
 use Lium\Framework\Exception\ExceptionInterface;
 
-class InvalidActionException extends \InvalidArgumentException implements ExceptionInterface
+class InvalidActionException extends InvalidArgumentException implements ExceptionInterface
 {
-    /** @var object */
-    protected $action;
-
-    /** @var string */
-    protected $reasonPhrase;
+    protected object $action;
+    protected string $reasonPhrase;
 
     public function __construct(object $action, string $reasonPhrase = '')
     {

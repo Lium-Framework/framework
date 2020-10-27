@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Lium\Framework;
 
+use Exception;
 use Laminas\HttpHandlerRunner\Emitter\EmitterInterface;
 use Lium\Framework\DependencyInjection\FrameworkExtension;
+use LogicException;
 use Nyholm\Psr7Server\ServerRequestCreatorInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\Config\FileLocator;
@@ -27,29 +29,19 @@ use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
  */
 abstract class Kernel
 {
-    /** @var string */
-    protected $env;
+    protected string $env;
+    protected bool $debug;
+    protected ?ContainerInterface $container;
+    private bool $booted;
 
-    /** @var bool */
-    protected $debug;
-
-    /**
-     * @var ContainerInterface
-     *
-     * @psalm-suppress PropertyNotSetInConstructor
-     */
-    protected $container;
-
-    /** @var bool */
-    private $booted;
-
-    /** @var ExtensionInterface[] */
-    private $extensions;
+    /** @var array<string, ExtensionInterface> */
+    private array $extensions;
 
     public function __construct(string $env, bool $debug = false)
     {
         $this->env = $env;
         $this->debug = $debug;
+        $this->container = null;
         $this->booted = false;
         $this->extensions = [];
     }
@@ -57,11 +49,15 @@ abstract class Kernel
     /**
      * Run the application's kernel
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function run(): void
     {
         $this->boot();
+
+        if ($this->container === null) {
+            throw new LogicException('The container should be initialized in the boot() method');
+        }
 
         /** @var ServerRequestCreatorInterface $serverRequestCreator */
         $serverRequestCreator = $this->container->get(ServerRequestCreatorInterface::class);
@@ -90,25 +86,36 @@ abstract class Kernel
 
     public function addExtensions(ExtensionInterface ...$extensions): void
     {
-        $extensionsAliases = $this->getExtensionsAliases();
-
         foreach ($extensions as $extension) {
-            $alias = $extension->getAlias();
-            if (!in_array($alias, $extensionsAliases)) {
-                $this->extensions[] = $extension;
-                $extensionsAliases[] = $alias;
-            }
+            $this->extensions[$extension->getAlias()] = $extension;
         }
     }
 
     /**
-     * @return string[]
+     * Prepare the kernel to run the application
+     *
+     * @throws Exception
+     *
+     * @psalm-suppress UnresolvableInclude
      */
-    public function getExtensionsAliases(): array
+    protected function boot(): void
     {
-        return array_map(function (ExtensionInterface $extension) {
-            return $extension->getAlias();
-        }, $this->extensions);
+        if ($this->booted === true) {
+            return;
+        }
+
+        $containerDumpFile = $this->getBuiltContainerFilename();
+
+        if ($this->debug === true || file_exists($containerDumpFile) === false) {
+            $this->buildContainer($containerDumpFile);
+        }
+
+        require_once $containerDumpFile;
+
+        /** @var ContainerInterface */
+        $this->container = new \BuiltContainer;
+
+        $this->booted = true;
     }
 
     abstract protected function configureContainer(ContainerBuilder $container, LoaderInterface $loader): void;
@@ -128,36 +135,9 @@ abstract class Kernel
         return new DelegatingLoader($resolver);
     }
 
-    protected function getCachedContainerFilename(): string
+    protected function getBuiltContainerFilename(): string
     {
-        return $this->getCacheDir().'/container.php';
-    }
-
-    /**
-     * Prepare the kernel to run the application
-     *
-     * @throws \Exception
-     *
-     * @psalm-suppress UnresolvableInclude
-     * @psalm-suppress InvalidPropertyAssignmentValue
-     */
-    private function boot(): void
-    {
-        if (true === $this->booted) {
-            return;
-        }
-
-        $containerDumpFile = $this->getCachedContainerFilename();
-
-        if (true === $this->debug || !file_exists($containerDumpFile)) {
-            $this->buildContainer($containerDumpFile);
-        }
-
-        require_once $containerDumpFile;
-
-        $this->container = new \CachedContainer();
-
-        $this->booted = true;
+        return sprintf('%s/container.php', $this->getCacheDir());
     }
 
     /**
@@ -165,7 +145,7 @@ abstract class Kernel
      *
      * @param string $containerDumpFile
      *
-     * @throws \Exception
+     * @throws Exception
      */
     private function buildContainer(string $containerDumpFile): void
     {
@@ -188,15 +168,15 @@ abstract class Kernel
         @mkdir(dirname($containerDumpFile), 0777, true);
         file_put_contents(
             $containerDumpFile,
-            (new PhpDumper($containerBuilder))->dump(['class' => 'CachedContainer'])
+            (new PhpDumper($containerBuilder))->dump(['class' => 'BuiltContainer'])
         );
     }
 
     private function registerExtensions(ContainerBuilder $container): void
     {
-        foreach ($this->extensions as $extension) {
+        foreach ($this->extensions as $alias => $extension) {
             $container->registerExtension($extension);
-            $container->loadFromExtension($extension->getAlias());
+            $container->loadFromExtension($alias);
         }
     }
 }

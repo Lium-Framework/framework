@@ -17,7 +17,7 @@ use Psr\Http\Server\MiddlewareInterface;
 final class MiddlewareRunner implements MiddlewareRunnerInterface
 {
     /** @var MiddlewareInterface[] */
-    private $queue;
+    private array $queue;
 
     public function __construct(MiddlewareInterface ...$queue)
     {
@@ -28,7 +28,7 @@ final class MiddlewareRunner implements MiddlewareRunnerInterface
     {
         $middleware = array_shift($this->queue);
 
-        if (null === $middleware) {
+        if ($middleware === null) {
             throw new NoResponseException();
         }
 
